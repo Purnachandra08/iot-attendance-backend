@@ -1,0 +1,11 @@
+import 'dotenv/config';
+import bcrypt from 'bcryptjs';
+import {createClient} from '@supabase/supabase-js';
+if(!process.env.SUPABASE_URL||!process.env.SUPABASE_SERVICE_ROLE_KEY)throw Error('Set Supabase credentials in .env');
+const client=createClient(process.env.SUPABASE_URL,process.env.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false}});
+const username=process.env.ADMIN_USERNAME||'admin',password=process.env.ADMIN_PASSWORD;
+if(!password||password.length<8)throw Error('Set ADMIN_PASSWORD in .env to at least 8 characters');
+const password_hash=await bcrypt.hash(password,12);
+const {error}=await client.from('admins').upsert({username,password_hash,role:'Administrator',created_at:new Date().toISOString()},{onConflict:'username'});
+if(error)throw error;
+console.log(`Admin ${username} created/updated. Keep your password private.`);
